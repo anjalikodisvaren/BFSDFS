@@ -4,6 +4,8 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from collections import deque
 
+
+# Directed graph from Question 2
 GRAPH = {
     'A': ['B', 'D'],
     'B': ['C', 'E', 'G'],
@@ -12,14 +14,21 @@ GRAPH = {
     'E': ['H'],
     'F': [],
     'G': ['F'],
-    'H': ['F', 'G'],
+    'H': ['F', 'G']
 }
 
+
 def normalize(graph):
-    result = {str(k).strip().upper(): sorted(set(str(v).strip().upper() for v in vs)) for k, vs in graph.items()}
+    result = {
+        str(k).strip().upper():
+        sorted(set(str(v).strip().upper() for v in vs))
+        for k, vs in graph.items()
+    }
+
     for vs in list(result.values()):
         for v in vs:
             result.setdefault(v, [])
+
     return dict(sorted(result.items()))
 
 
@@ -27,190 +36,273 @@ def search(graph, start, goal=None, method='BFS'):
     graph = normalize(graph)
     start = start.upper().strip()
     goal = goal.upper().strip() if goal else None
+
     if start not in graph or (goal and goal not in graph):
         raise ValueError('Start and goal must exist in the graph.')
+
     if method not in ('BFS', 'DFS'):
         raise ValueError('Method must be BFS or DFS.')
 
-    if method == 'BFS':
-       
-        frontier = deque([start])
-        discovered = {start}
-        parent[start], depth[start] = None, 0
-        while frontier:
-            node = frontier.popleft()
-            order.append(node)
-            if node != goal:
-                for nb in graph[node]:                 
-                    if nb not in discovered:
-                        discovered.add(nb)
-                        parent[nb], depth[nb] = node, depth[node] + 1
-                        frontier.append(nb)
-            trace.append({'step': len(order), 'current': node, 'visited': order.copy(),
-                          'frontier': list(frontier), 'depth': depth[node],
-                          'parent': parent[node]})
-            if node == goal:
-                break
-    else:
+    frontier = deque([start]) if method == 'BFS' else [start]
+    discovered = {start}
+    parent = {start: None}
+    depth = {start: 0}
 
-        frontier = [(start, None, 0)]
-        visited = set()
-        while frontier:
-            node, par, d = frontier.pop()
-            if node in visited:
-                continue
-            visited.add(node)
-            parent[node], depth[node] = par, d
-            order.append(node)
-            if node != goal:
-                for nb in reversed(graph[node]):
-                    if nb not in visited:
-                        frontier.append((nb, node, d + 1))
-            trace.append({'step': len(order), 'current': node, 'visited': order.copy(),
-                          'frontier': [f[0] for f in frontier], 'depth': d, 'parent': par})
-            if node == goal:
-                break
+    order, trace = [], []
+
+    while frontier:
+        node = frontier.popleft() if method == 'BFS' else frontier.pop()
+        order.append(node)
+
+        if node != goal:
+            neighbors = (
+                graph[node]
+                if method == 'BFS'
+                else list(reversed(graph[node]))
+            )
+
+            for neighbor in neighbors:
+                if neighbor not in discovered:
+                    discovered.add(neighbor)
+                    parent[neighbor] = node
+                    depth[neighbor] = depth[node] + 1
+                    frontier.append(neighbor)
+
+        trace.append({
+            'step': len(order),
+            'current': node,
+            'visited': order.copy(),
+            'frontier': list(frontier),
+            'depth': depth[node],
+            'parent': parent[node]
+        })
+
+        if node == goal:
+            break
 
     path = []
+
     if goal is not None and goal in order:
         cursor = goal
+
         while cursor is not None:
             path.append(cursor)
             cursor = parent[cursor]
+
         path.reverse()
 
-    return {'method': method, 'order': order, 'path': path,
-            'found': bool(path) if goal else None, 'trace': trace,
-            'depths': depth, 'parents': parent, 'explored': len(order),
-            'max_frontier': max([1] + [len(t['frontier']) for t in trace])}
+    return {
+        'method': method,
+        'order': order,
+        'path': path,
+        'found': bool(path) if goal else None,
+        'trace': trace,
+        'depths': depth,
+        'parents': parent,
+        'explored': len(order),
+        'max_frontier': max(
+            [1] + [len(t['frontier']) for t in trace]
+        )
+    }
 
 
 def edges_from_text(text):
+    """One directed edge per line: A B or A,B; isolated nodes: A."""
 
     graph = {}
+
     for line in text.splitlines():
         line = line.split('#', 1)[0].strip().replace(',', ' ')
+
         if not line:
             continue
+
         tokens = line.upper().split()
+
         if len(tokens) not in (1, 2):
             raise ValueError(f'Invalid line: {line}')
+
         graph.setdefault(tokens[0], [])
+
         if len(tokens) == 2:
             graph[tokens[0]].append(tokens[1])
             graph.setdefault(tokens[1], [])
+
     if not graph:
         raise ValueError('Graph cannot be empty.')
+
     if len(graph) > 100:
         raise ValueError('Maximum 100 nodes.')
+
     return normalize(graph)
 
 
-def graph_to_text(g):
-    lines = []
-    for u, vs in g.items():
-        lines += [f'{u} {v}' for v in vs] if vs else [u]
-    return '\n'.join(lines)
+DEFAULT_EDGES = '\n'.join(
+    f'{u} {v}' if v else u
+    for u, neighbors in normalize(GRAPH).items()
+    for v in (neighbors if neighbors else [None])
+)
 
 
-DEFAULT_EDGES = graph_to_text(normalize(GRAPH))
+st.set_page_config(
+    page_title='BSD3513 | BFS & DFS Lab#1',
+    page_icon='',
+    layout='wide'
+)
 
-st.set_page_config(page_title='BSD3513 | BFS & DFS Lab#1', page_icon='🔍', layout='wide')
 st.title('BFS & DFS | Interactive Uninformed Search Algorithms')
-st.caption('BSD3513 Introduction to AI · Lab Report 1 · SD24049 (Section 01G) · '
-           'Alphabetical tie-breaking · UMPSA')
+
+st.caption(
+    'BSD3513 Introduction to AI · Lab Report 1 · '
+    'SD24049 (Section 01G) · Alphabetical tie-breaking · UMPSA'
+)
+
+
+# Learning guide follows the lecturer's original code
+with st.expander('Learning guide', expanded=False):
+    st.markdown(
+        '**BFS** explores level by level using a FIFO queue; '
+        '**DFS** explores deeply using a LIFO stack. For adjacency-list '
+        'implementations both require **O(V + E)** time. BFS finds '
+        'minimum-hop paths in unweighted graphs; DFS does not guarantee this.'
+    )
+
 
 with st.sidebar:
     st.header('Graph editor')
-    edge_text = st.text_area('Directed edges (one per line: A B)', DEFAULT_EDGES, height=260)
-    st.caption('A line with only a node = isolated node. Edges are directed. '
-               'The default graph is the one from Question 2.')
+
+    edge_text = st.text_area(
+        'Directed edges (one per line: A B)',
+        DEFAULT_EDGES,
+        height=220
+    )
+
+    st.caption(
+        'A line containing only a node represents an isolated node. '
+        'Edges are directed.'
+    )
+
 
 try:
     graph = edges_from_text(edge_text)
+
 except ValueError as exc:
     st.error(str(exc))
     st.stop()
 
+
 nodes = list(graph)
+
 a, b, c = st.columns(3)
+
 start = a.selectbox('Starting node', nodes)
 goal = b.selectbox('Goal node (optional)', ['No goal'] + nodes)
 method = c.selectbox('Algorithm', ['Both', 'BFS', 'DFS'])
+
 goal = None if goal == 'No goal' else goal
 
-results = {m: search(graph, start, goal, m)
-           for m in (['BFS', 'DFS'] if method == 'Both' else [method])}
+results = {
+    m: search(graph, start, goal, m)
+    for m in (['BFS', 'DFS'] if method == 'Both' else [method])
+}
 
 
 def draw_graph(result, step):
     g = nx.DiGraph()
+
     for node, neighbors in graph.items():
         g.add_node(node)
-        for nb in neighbors:
-            g.add_edge(node, nb)
+
+        for neighbor in neighbors:
+            g.add_edge(node, neighbor)
 
     fig, ax = plt.subplots(figsize=(7, 4.5))
-    pos = POS if set(POS) == set(g.nodes) else nx.spring_layout(g, seed=12)
+    pos = nx.spring_layout(g, seed=12)
 
-    trace = result['trace'][step - 1]
-    current, seen, path = trace['current'], trace['visited'], result['path']
+    seen = result['trace'][step - 1]['visited']
 
-    colors = []
-    for node in g.nodes:
-        if node == current:
-            colors.append('#10b981')            
-        elif path and node == path[-1]:
-            colors.append('#f59e0b')           
-        elif node in seen:
-            colors.append('#93c5fd')           
-        else:
-            colors.append('#e5e7eb')            
+    colors = [
+        '#10b981'
+        if n == result['trace'][step - 1]['current']
+        else '#93c5fd'
+        if n in seen
+        else '#e5e7eb'
+        for n in g.nodes
+    ]
 
-    path_edges = set(zip(path, path[1:]))
-    edge_colors = ['#f59e0b' if (u, v) in path_edges else '#64748b' for u, v in g.edges()]
+    nx.draw_networkx(
+        g,
+        pos,
+        ax=ax,
+        with_labels=True,
+        node_color=colors,
+        node_size=950,
+        font_weight='bold',
+        arrows=True,
+        arrowsize=19,
+        edge_color='#64748b'
+    )
 
-    nx.draw_networkx(g, pos, ax=ax, with_labels=True, node_color=colors, node_size=950,
-                     font_weight='bold', arrows=True, arrowsize=19,
-                     edge_color=edge_colors, width=2)
     ax.axis('off')
-    fig.tight_layout()
+
     return fig
 
 
 for m, r in results.items():
     st.subheader(f'{m} search')
-    st.write('**Expansion order:** ' + ' → '.join(r['order']))
 
-    # Level (BFS) / depth (DFS tree) of every node - required by the question
-    label = 'Levels' if m == 'BFS' else 'Depths (DFS tree)'
-    by_depth = {}
-    for n in r['order']:
-        by_depth.setdefault(r['depths'][n], []).append(n)
-    st.write(f'**{label}:** ' + ' | '.join(f'{k}: {", ".join(v)}' for k, v in sorted(by_depth.items())))
+    st.write(
+        '**Expansion order:** ' + ' → '.join(r['order'])
+    )
 
     if goal:
-        if r['found']:
-            st.write('**Goal path:** ' + ' → '.join(r['path']))
-            st.write(f"**Path length:** {len(r['path']) - 1} edges ({len(r['path'])} nodes)")
-        else:
-            st.write('**Goal path:** Not reachable')
+        st.write(
+            '**Goal path:** ' +
+            (' → '.join(r['path']) if r['found'] else 'Not reachable')
+        )
 
     x, y, z = st.columns(3)
-    x.metric('Expanded nodes', r['explored'])
-    y.metric('Max recorded frontier size', r['max_frontier'])
-    z.metric('Goal path edges', len(r['path']) - 1 if r['found'] else '—')
 
-    step = st.slider(f'{m}: inspect expansion step', 1, len(r['trace']), len(r['trace']), key=m)
+    x.metric('Expanded nodes', r['explored'])
+
+    y.metric(
+        'Maximum recorded frontier',
+        r['max_frontier']
+    )
+
+    z.metric(
+        'Goal path edges',
+        len(r['path']) - 1 if r['found'] else '—'
+    )
+
+    step = st.slider(
+        f'{m}: inspect expansion step',
+        1,
+        len(r['trace']),
+        len(r['trace']),
+        key=m
+    )
+
     left, right = st.columns([1.2, 1])
+
     with left:
         fig = draw_graph(r, step)
         st.pyplot(fig)
         plt.close(fig)
-        st.caption('Green: current | Blue: visited | Orange: goal and goal-path edges | Grey: unvisited')
+
     with right:
         st.write('**Step trace**')
-        st.dataframe(pd.DataFrame(r['trace']), hide_index=True)
-        st.info('Current frontier: ' + str(r['trace'][step - 1]['frontier']))
+
+        st.dataframe(
+            pd.DataFrame(r['trace']),
+            hide_index=True,
+            use_container_width=True
+        )
+
+        st.info(
+            'Current frontier: ' +
+            str(r['trace'][step - 1]['frontier'])
+        )
 
 st.divider()
+```
