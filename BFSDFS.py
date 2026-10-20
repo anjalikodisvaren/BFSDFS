@@ -15,6 +15,17 @@ GRAPH = {
     'H': ['F', 'G']
 }
 
+POS = {
+    'A': (4.4, 6.3),
+    'E': (5.6, 6.3),
+    'D': (3.25, 5.7),
+    'H': (6.7, 5.9),
+    'B': (4.7, 5.2),
+    'C': (3.8, 4.8),
+    'G': (5.7, 4.6),
+    'F': (6.7, 4.8)
+}
+
 
 def normalize(graph):
     result = {
@@ -213,13 +224,19 @@ def draw_graph(result, step):
             g.add_edge(node, neighbor)
 
     fig, ax = plt.subplots(figsize=(7, 4.5))
-    pos = nx.spring_layout(g, seed=12)
+
+    pos = (
+        POS
+        if set(POS) == set(g.nodes)
+        else nx.spring_layout(g, seed=12)
+    )
 
     seen = result['trace'][step - 1]['visited']
+    current = result['trace'][step - 1]['current']
 
     colors = [
         '#10b981'
-        if n == result['trace'][step - 1]['current']
+        if n == current
         else '#93c5fd'
         if n in seen
         else '#e5e7eb'
