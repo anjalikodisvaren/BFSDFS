@@ -15,14 +15,8 @@ GRAPH = {
     'H': ['F', 'G'],
 }
 
-POS = {'A': (4.4, 6.3), 'E': (5.6, 6.3), 'D': (3.25, 5.7), 'H': (6.7, 5.9),
-       'B': (4.7, 5.2), 'C': (3.8, 4.8), 'G': (5.7, 4.6), 'F': (6.7, 4.8)}
-
-
 def normalize(graph):
-    """Upper-case names, remove duplicates, sort neighbours alphabetically."""
-    result = {str(k).strip().upper(): sorted(set(str(v).strip().upper() for v in vs))
-              for k, vs in graph.items()}
+    result = {str(k).strip().upper(): sorted(set(str(v).strip().upper() for v in vs)) for k, vs in graph.items()}
     for vs in list(result.values()):
         for v in vs:
             result.setdefault(v, [])
@@ -38,10 +32,8 @@ def search(graph, start, goal=None, method='BFS'):
     if method not in ('BFS', 'DFS'):
         raise ValueError('Method must be BFS or DFS.')
 
-    parent, depth, order, trace = {}, {}, [], []
-
     if method == 'BFS':
-        # BFS: FIFO queue, a node is marked DISCOVERED when it is enqueued
+       
         frontier = deque([start])
         discovered = {start}
         parent[start], depth[start] = None, 0
@@ -49,7 +41,7 @@ def search(graph, start, goal=None, method='BFS'):
             node = frontier.popleft()
             order.append(node)
             if node != goal:
-                for nb in graph[node]:                  # alphabetical order
+                for nb in graph[node]:                 
                     if nb not in discovered:
                         discovered.add(nb)
                         parent[nb], depth[nb] = node, depth[node] + 1
@@ -60,18 +52,18 @@ def search(graph, start, goal=None, method='BFS'):
             if node == goal:
                 break
     else:
-        # DFS marks a node VISITED when it is POPPED (true DFS).
-        frontier = [(start, None, 0)]                   # (node, parent, depth)
+
+        frontier = [(start, None, 0)]
         visited = set()
         while frontier:
-            node, par, d = frontier.pop()               # LIFO
+            node, par, d = frontier.pop()
             if node in visited:
                 continue
             visited.add(node)
             parent[node], depth[node] = par, d
             order.append(node)
             if node != goal:
-                for nb in reversed(graph[node]):        # reverse -> smallest popped first
+                for nb in reversed(graph[node]):
                     if nb not in visited:
                         frontier.append((nb, node, d + 1))
             trace.append({'step': len(order), 'current': node, 'visited': order.copy(),
@@ -128,16 +120,6 @@ st.title('BFS & DFS | Interactive Uninformed Search Algorithms')
 st.caption('BSD3513 Introduction to AI · Lab Report 1 · SD24049 (Section 01G) · '
            'Alphabetical tie-breaking · UMPSA')
 
-with st.expander('Learning guide & complexity', expanded=False):
-    st.markdown(
-        '**BFS** explores level by level using a FIFO queue; **DFS** goes as deep as '
-        'possible using a LIFO stack and then backtracks.\n\n'
-        '| | BFS | DFS |\n|---|---|---|\n'
-        '| Time | O(V + E) | O(V + E) |\n'
-        '| Space | O(V) | O(V) |\n'
-        '| Shortest path (unweighted) | Yes | No |\n\n'
-        'V = number of vertices, E = number of edges.')
-
 with st.sidebar:
     st.header('Graph editor')
     edge_text = st.text_area('Directed edges (one per line: A B)', DEFAULT_EDGES, height=260)
@@ -169,7 +151,6 @@ def draw_graph(result, step):
             g.add_edge(node, nb)
 
     fig, ax = plt.subplots(figsize=(7, 4.5))
-    # Use the layout from the question for the default graph, otherwise auto-layout
     pos = POS if set(POS) == set(g.nodes) else nx.spring_layout(g, seed=12)
 
     trace = result['trace'][step - 1]
@@ -178,13 +159,13 @@ def draw_graph(result, step):
     colors = []
     for node in g.nodes:
         if node == current:
-            colors.append('#10b981')            # current: green
+            colors.append('#10b981')            
         elif path and node == path[-1]:
-            colors.append('#f59e0b')            # goal: orange
+            colors.append('#f59e0b')           
         elif node in seen:
-            colors.append('#93c5fd')            # visited: blue
+            colors.append('#93c5fd')           
         else:
-            colors.append('#e5e7eb')            # unvisited: grey
+            colors.append('#e5e7eb')            
 
     path_edges = set(zip(path, path[1:]))
     edge_colors = ['#f59e0b' if (u, v) in path_edges else '#64748b' for u, v in g.edges()]
