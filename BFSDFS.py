@@ -4,8 +4,6 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from collections import deque
 
-
-# Directed graph from Question 2
 GRAPH = {
     'A': ['B', 'D'],
     'B': ['C', 'E', 'G'],
@@ -157,8 +155,6 @@ st.caption(
     'SD24049 (Section 01G) · Alphabetical tie-breaking · UMPSA'
 )
 
-
-# Learning guide follows the lecturer's original code
 with st.expander('Learning guide', expanded=False):
     st.markdown(
         '**BFS** explores level by level using a FIFO queue; '
@@ -305,4 +301,3 @@ for m, r in results.items():
         )
 
 st.divider()
-```
