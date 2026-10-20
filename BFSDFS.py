@@ -26,7 +26,6 @@ POS = {
     'F': (6.7, 4.8)
 }
 
-
 def normalize(graph):
     result = {
         str(k).strip().upper():
@@ -39,7 +38,6 @@ def normalize(graph):
             result.setdefault(v, [])
 
     return dict(sorted(result.items()))
-
 
 def search(graph, start, goal=None, method='BFS'):
     graph = normalize(graph)
@@ -114,10 +112,8 @@ def search(graph, start, goal=None, method='BFS'):
         )
     }
 
-
 def edges_from_text(text):
-    """One directed edge per line: A B or A,B; isolated nodes: A."""
-
+    
     graph = {}
 
     for line in text.splitlines():
@@ -145,13 +141,11 @@ def edges_from_text(text):
 
     return normalize(graph)
 
-
 DEFAULT_EDGES = '\n'.join(
     f'{u} {v}' if v else u
     for u, neighbors in normalize(GRAPH).items()
     for v in (neighbors if neighbors else [None])
 )
-
 
 st.set_page_config(
     page_title='BSD3513 | BFS & DFS Lab#1',
@@ -174,7 +168,6 @@ with st.expander('Learning guide', expanded=False):
         'minimum-hop paths in unweighted graphs; DFS does not guarantee this.'
     )
 
-
 with st.sidebar:
     st.header('Graph editor')
 
@@ -189,14 +182,12 @@ with st.sidebar:
         'Edges are directed.'
     )
 
-
 try:
     graph = edges_from_text(edge_text)
 
 except ValueError as exc:
     st.error(str(exc))
     st.stop()
-
 
 nodes = list(graph)
 
@@ -212,7 +203,6 @@ results = {
     m: search(graph, start, goal, m)
     for m in (['BFS', 'DFS'] if method == 'Both' else [method])
 }
-
 
 def draw_graph(result, step):
     g = nx.DiGraph()
@@ -259,7 +249,6 @@ def draw_graph(result, step):
     ax.axis('off')
 
     return fig
-
 
 for m, r in results.items():
     st.subheader(f'{m} search')
